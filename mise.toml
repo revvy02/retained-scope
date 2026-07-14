@@ -1,0 +1,6 @@
+[tools]
+"ubi:UpliftGames/wally" = "v0.3.2"
+
+[tasks.publish-wally]
+description = "Publish the package to the wally registry"
+run = "wally publish"
