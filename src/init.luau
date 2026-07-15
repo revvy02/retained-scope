@@ -91,14 +91,28 @@ local function RetainedScope<T>(acc: Accumulator<T>?, root: Node<T>?, state: { n
 		return state.node :: any
 	end
 
-	return {
+	local function scope<U>(id, fn: ((Node<U>) -> ())?): Node<U>
+		local node = push(id)
+		if fn then
+			fn(node)
+		end
+		pop()
+		return node :: any
+	end
+
+	return setmetatable({
 		push = push,
 		pop = pop,
 		peek = peek,
 		prune = prune,
 		root = root,
 		state = state,
-	}
+		scope = scope,
+	}, {
+		__call = function(_, id, fn)
+			return scope(id, fn)
+		end,
+	})
 end
 
 return RetainedScope
