@@ -1,0 +1,8 @@
+name = "rvy/retained_scope"
+version = "0.1.0"
+description = "Immediate-mode traversal over a retained node tree — push/pop/peek/prune with reconciliation hooks"
+license = "MIT"
+
+[target]
+environment = "luau"
+lib = "src/init.luau"
