@@ -7,6 +7,7 @@ export type Node<T = {}> = {
 	children: { [string | number]: Node },
 	visited: boolean,
 	cursor: number,
+	deferred: { () -> () }?,
 } & T
 
 export type Accumulator<T = {}> = {
@@ -79,12 +80,36 @@ local function RetainedScope<T>(acc: Accumulator<T>?, root: Node<T>?, state: { n
 	local function pop()
 		local current = state.node
 
+		-- The table is kept and emptied, so a node that defers every walk allocates it once
+		local deferred = current.deferred
+		if deferred and deferred[1] then
+			for i = #deferred, 1, -1 do
+				local fn = deferred[i]
+				deferred[i] = nil
+				fn()
+			end
+		end
+
 		if on_exit then
 			on_exit(current)
 		end
 
 		current.cursor = 0
 		state.node = current.parent
+	end
+
+	-- Runs fn when the current scope pops, after everything inside it has run; the last one
+	-- deferred runs first. fn must not push or pop, since the scope is closing. (Unlike task.defer,
+	-- which waits for the engine's next resumption point.)
+	local function defer(fn: () -> ())
+		local node = state.node
+		assert(node.parent ~= nil, "defer: no scope is open")
+		local deferred = node.deferred
+		if deferred then
+			table.insert(deferred, fn)
+		else
+			node.deferred = { fn }
+		end
 	end
 
 	local function peek<U>(): Node<U>
@@ -104,6 +129,7 @@ local function RetainedScope<T>(acc: Accumulator<T>?, root: Node<T>?, state: { n
 		push = push,
 		pop = pop,
 		peek = peek,
+		defer = defer,
 		prune = prune,
 		root = root,
 		state = state,
