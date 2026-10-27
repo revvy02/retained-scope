@@ -77,7 +77,8 @@ local function RetainedScope<T>(acc: Accumulator<T>?, root: Node<T>?, state: { n
 		return child :: any
 	end
 
-	local function pop()
+	-- Closes the current scope, and returns its node
+	local function pop<U>(): Node<U>
 		local current = state.node
 
 		-- The table is kept and emptied, so a node that defers every walk allocates it once
@@ -96,6 +97,8 @@ local function RetainedScope<T>(acc: Accumulator<T>?, root: Node<T>?, state: { n
 
 		current.cursor = 0
 		state.node = current.parent
+
+		return current :: any
 	end
 
 	-- Runs fn when the current scope pops, after everything inside it has run; the last one
